@@ -19,6 +19,7 @@ model User {
   sessions            Session[]
   verificationCodes   VerificationCode[]
   passwordResetTokens PasswordResetToken[]
+  jobs                Job[]
 }
 
 model Session {
@@ -66,4 +67,111 @@ model RateLimitHit {
   createdAt DateTime @default(now())
 
   @@index([key, createdAt])
+}
+
+// One uploaded file is one job. status is a plain string, not a Prisma enum -
+// enforced by a hand-written CHECK in the migration (see migration.sql)
+// rather than a native Postgres enum type, so adding a status later is a
+// constraint swap, not a type migration. attempts counts model-call attempts
+// within one processing pass (the extractor's one allowed validation retry),
+// capped at 2 by that policy - not whole-job re-runs; nothing in this design
+// re-runs a job that has already reached a terminal status.
+model Job {
+  id               String    @id @default(cuid())
+  userId           String
+  // The filesystem key, not the file - see architectural decision on
+  // storage. Unique: two jobs must never silently point at the same file.
+  storageKey       String    @unique
+  originalFilename String
+  sizeBytes        Int
+  status           String    @default("pending")
+  attempts         Int       @default(0)
+  errorMessage     String?
+  // Null until the model actually replies - a job that fails before that
+  // (e.g. every attempt timed out) has no token counts to report, and 0
+  // would be a false claim rather than an honest unknown. cachedTokens is
+  // the prompt_cache_hit_tokens portion of promptTokens (verified field
+  // name in DOC/deepseek-verification.md); cache-miss tokens are
+  // promptTokens - cachedTokens, so no third column.
+  promptTokens     Int?
+  completionTokens Int?
+  cachedTokens     Int?
+  // The model ID actually used for this job's call(s) - an audit trail
+  // independent of whatever the config module says today.
+  model            String?
+  createdAt        DateTime  @default(now())
+  // Set when a worker claims the job (pending -> processing).
+  startedAt        DateTime?
+  // Set on reaching done or failed.
+  completedAt      DateTime?
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  results      ReviewResult[]
+  rawResponses RawModelResponse[]
+
+  // Serves "list this user's jobs" (the processing/result views).
+  @@index([userId])
+  // Serves the worker's FIFO poll: oldest pending jobs first. Composite,
+  // not status alone, because the poll always orders by age too.
+  @@index([status, createdAt])
+}
+
+// One row per review extracted from a file. sentiment and rating use the
+// same String + CHECK pattern as Job.status, for consistency across the
+// schema. themes/complaints are Postgres native arrays, not JSON and not a
+// separate table - the shape is already a validated array of strings before
+// it reaches the DB, so JSON's schema-less flexibility buys nothing, and
+// nothing in this project queries themes/complaints across reviews, so a
+// separate table (real join overhead) has no query to justify it.
+model ReviewResult {
+  id          String @id @default(cuid())
+  jobId       String
+  // Position within the uploaded file (0-based, matching the array index
+  // the model returns). Ordering for the result view.
+  indexInFile Int
+  sentiment   String
+  rating      Int
+  themes      String[]
+  complaints  String[]
+  // A literal substring of the source file - checked in application code,
+  // not by any constraint here (a database can't verify a fact about a
+  // file that lives outside it). Re-verifying it later means re-reading
+  // the file at Job.storageKey, not trusting this column as its own proof.
+  quotedEvidence String
+
+  createdAt DateTime @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  // Invalid state prevented: two rows claiming the same position in the
+  // same file. Also serves "fetch all results for a job" as this index's
+  // leftmost-column prefix - no separate @@index([jobId]) needed.
+  @@unique([jobId, indexInFile])
+}
+
+// The unvalidated artifact a model call actually returned, kept separate
+// from ReviewResult (the validated, trusted result) so that trust boundary
+// is structural, not just a comment. One row per model-call attempt for a
+// job - up to 2, given the one-retry policy - not one row per job, because
+// the evidence this exists to capture (what a failed validation attempt's
+// raw response looked like) would otherwise be overwritten by the retry
+// that follows it. No row is written for a timeout: there is no response
+// to store, so a row existing at all means the provider actually replied.
+model RawModelResponse {
+  id            String @id @default(cuid())
+  jobId         String
+  attemptNumber Int
+  rawResponse   String
+  // Null for whichever attempt passed validation; populated for the one(s)
+  // that didn't - this is what lets a job end up `done` while still
+  // carrying the evidence that an earlier attempt failed validation.
+  validationError String?
+
+  createdAt DateTime @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  // Invalid state prevented: two rows both claiming to be the same
+  // attempt number for the same job.
+  @@unique([jobId, attemptNumber])
 }
