@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17
+    container_name: reviewslice-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: reviewslice
+      POSTGRES_PASSWORD: localdevpassword
+      POSTGRES_DB: reviewslice
+    ports:
+      - "5436:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U reviewslice -d reviewslice" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

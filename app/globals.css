@@ -1,0 +1,93 @@
+/* app/globals.css
+ *
+ * Order matters: design tokens first so the --sys-* variables exist,
+ * then Tailwind, then the @theme block that aliases them into utilities.
+ */
+
+@import "./design-tokens.css";
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+ * Tailwind utility aliases
+ *
+ * `@theme inline` substitutes the var() reference directly into each generated
+ * utility, so when [data-theme="dark"] redefines --sys-primary, every
+ * bg-primary / text-primary on the page follows automatically. No dark: variants
+ * needed for colour — the token layer handles the scheme switch.
+ *
+ * Only the roles actually used are aliased. Adding the full Material set would
+ * generate a hundred utilities nothing references.
+ * ------------------------------------------------------------------------- */
+
+@theme inline {
+    /* Surfaces and text */
+    --color-surface: var(--sys-surface);
+    --color-on-surface: var(--sys-on-surface);
+    --color-on-surface-variant: var(--sys-on-surface-variant);
+    --color-surface-container: var(--sys-surface-container);
+    --color-surface-container-high: var(--sys-surface-container-high);
+    --color-surface-variant: var(--sys-surface-variant);
+    --color-outline: var(--sys-outline);
+    --color-outline-variant: var(--sys-outline-variant);
+
+    /* Primary */
+    --color-primary: var(--sys-primary);
+    --color-on-primary: var(--sys-on-primary);
+    --color-primary-container: var(--sys-primary-container);
+    --color-on-primary-container: var(--sys-on-primary-container);
+
+    /* Secondary — used for the processing state */
+    --color-secondary: var(--sys-secondary);
+    --color-on-secondary: var(--sys-on-secondary);
+    --color-secondary-container: var(--sys-secondary-container);
+    --color-on-secondary-container: var(--sys-on-secondary-container);
+
+    /* Tertiary — used for the done state */
+    --color-tertiary: var(--sys-tertiary);
+    --color-on-tertiary: var(--sys-on-tertiary);
+    --color-tertiary-container: var(--sys-tertiary-container);
+    --color-on-tertiary-container: var(--sys-on-tertiary-container);
+
+    /* Error — used for the failed state */
+    --color-error: var(--sys-error);
+    --color-on-error: var(--sys-on-error);
+    --color-error-container: var(--sys-error-container);
+    --color-on-error-container: var(--sys-on-error-container);
+
+    /* Spacing: p-base, gap-small, mt-very-large, etc. */
+    --spacing-extra-small: 4px;
+    --spacing-small: 8px;
+    --spacing-medium: 12px;
+    --spacing-base: 16px;
+    --spacing-large: 20px;
+    --spacing-extra-large: 24px;
+    --spacing-very-large: 32px;
+
+    /* Type scale: text-body-large, text-headline-small, etc. */
+    --text-display-small: 2.5rem;
+    --text-headline-large: 2rem;
+    --text-headline-medium: 1.75rem;
+    --text-headline-small: 1.5rem;
+    --text-title-large: 1.375rem;
+    --text-title-medium: 1rem;
+    --text-title-small: 0.875rem;
+    --text-body-large: 1rem;
+    --text-body-medium: 0.875rem;
+    --text-label-large: 0.875rem;
+    --text-label-medium: 0.75rem;
+
+    /* Shadows: shadow-soft, shadow-medium, shadow-strong */
+    --shadow-soft: var(--effect-soft-shadow);
+    --shadow-medium: var(--effect-medium-shadow);
+    --shadow-strong: var(--effect-strong-shadow);
+}
+
+/* ---------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------- */
+
+body {
+    background-color: var(--sys-surface);
+    color: var(--sys-on-surface);
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
