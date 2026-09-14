@@ -76,7 +76,7 @@ function VerifyForm() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/upload");
     } catch {
       setFormError("Something went wrong. Please try again.");
     } finally {

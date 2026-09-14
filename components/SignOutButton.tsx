@@ -15,7 +15,7 @@ export default function SignOutButton() {
   async function handleSignOut() {
     setPending(true);
     await fetch("/api/auth/signout", { method: "POST" });
-    // A full navigation, not router.refresh() alone: the dashboard layout
+    // A full navigation, not router.refresh() alone: the upload layout
     // above this button re-runs requireSession() on the next request
     // regardless, but pushing to /signin explicitly is what actually
     // moves the user off a page they're no longer authorized to see.
