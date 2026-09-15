@@ -16,6 +16,8 @@
 // Prisma client itself also reads DATABASE_URL on its own. Neither is
 // touched by or duplicated in this module.)
 
+import path from "node:path";
+
 // ---------------------------------------------------------------------------
 // DeepSeek credential and endpoint
 // ---------------------------------------------------------------------------
@@ -182,6 +184,16 @@ export const MAX_UPLOAD_SIZE_BYTES = 1 * 1024 * 1024;
 // "a user uploads one or more plain-text files of customer product
 // reviews."
 export const ACCEPTED_MIME_TYPES = ["text/plain"] as const;
+
+// Outside the repository and outside public/, per AGENTS.MD's storage
+// section - a sibling of the project directory, not a path inside it.
+// Computed from process.cwd() (Next.js always runs with cwd set to the
+// project root) rather than a hardcoded absolute path, so this resolves
+// correctly on any machine the repo is cloned to, with no path inside the
+// project tree it could ever land on. Not env-driven: hard rule 1 forbids
+// writing to .env, and a plain computed constant needs no env var to be
+// changeable - editing this one line is the change.
+export const UPLOAD_STORAGE_DIR = path.resolve(process.cwd(), "..", "reviewslice-uploads");
 
 // ---------------------------------------------------------------------------
 // Worker
