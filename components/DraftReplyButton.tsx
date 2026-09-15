@@ -61,7 +61,7 @@ export default function DraftReplyButton({ reviewResultId, initialDrafts }: Draf
         type="button"
         onClick={handleClick}
         disabled={submitting}
-        className="self-start rounded-md bg-primary px-base py-small text-label-large text-on-primary disabled:opacity-50"
+        className="self-start rounded-md bg-primary px-base py-small text-label-large text-on-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? "Drafting…" : "Draft a reply to this reviewer"}
       </button>

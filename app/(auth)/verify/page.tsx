@@ -145,7 +145,7 @@ function VerifyForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+          className="rounded-md bg-blue-600 px-4 py-2 text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Verifying…" : "Verify"}
         </button>
@@ -155,7 +155,7 @@ function VerifyForm() {
           type="button"
           onClick={handleResend}
           disabled={resending || cooldownRemaining > 0}
-          className="text-left text-sm underline disabled:text-gray-400 disabled:no-underline"
+          className="text-left text-sm underline cursor-pointer disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
         >
           {cooldownRemaining > 0 ? `Resend code in ${cooldownRemaining}s` : "Resend code"}
         </button>

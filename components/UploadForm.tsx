@@ -125,7 +125,7 @@ export default function UploadForm({ maxSizeBytes, acceptedTypes, onUploaded }: 
       <button
         type="submit"
         disabled={submitting}
-        className="self-start rounded-md bg-primary px-base py-small text-label-large text-on-primary disabled:opacity-50"
+        className="self-start rounded-md bg-primary px-base py-small text-label-large text-on-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? "Uploading…" : "Upload"}
       </button>

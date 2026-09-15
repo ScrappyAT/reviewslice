@@ -104,7 +104,7 @@ export default function SigninPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+          className="rounded-md bg-blue-600 px-4 py-2 text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Signing in…" : "Sign in"}
         </button>
