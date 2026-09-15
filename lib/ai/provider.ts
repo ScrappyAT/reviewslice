@@ -25,15 +25,19 @@ const client = new OpenAI({
   baseURL: DEEPSEEK_BASE_URL,
 });
 
-// DeepSeek's own field names for the cache hit/miss split (verified in
-// DOC/deepseek-verification.md), not the OpenAI SDK's own convention
+// DeepSeek's own field name for the cache-hit count (verified in
+// DOC/deepseek-verification.md, confirmed against a real call), not the
+// OpenAI SDK's own convention for the same number
 // (prompt_tokens_details.cached_tokens) - inspecting the installed SDK's
-// types (node_modules/openai/resources/completions.d.ts) confirms the two
-// don't match. This is exactly the "compatible, not identical" gap the
-// brief asks to be explained rather than papered over: the SDK's own
-// TypeScript types don't know about DeepSeek's extra fields, so this
-// module reads them off the raw response with its own narrow type rather
-// than trusting OpenAI.CompletionUsage to have a field for them.
+// types (node_modules/openai/resources/completions.d.ts) confirms the
+// SDK's types don't declare this field. This is exactly the "compatible,
+// not identical" gap the brief asks to be explained rather than papered
+// over, so this module reads it off the raw response with its own narrow
+// type rather than trusting OpenAI.CompletionUsage to have a field for it.
+// A live call showed DeepSeek actually sends the same count in both
+// places at once (their own top-level field, and mirrored into OpenAI's
+// nested prompt_tokens_details.cached_tokens) - this module only reads
+// the one below; the nested copy is redundant, not missing.
 interface DeepSeekUsage {
   prompt_tokens?: number;
   completion_tokens?: number;

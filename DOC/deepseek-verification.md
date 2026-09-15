@@ -113,6 +113,17 @@ and `reasoning_tokens` when present — the flat `total_tokens` alone would blur
 hits into cache misses and make the cost model in Section 5 wrong by roughly two
 orders of magnitude on the input side.
 
+**Correction, from a real call (2026-09-15), not the docs:** `usage` carries the
+cache-hit count in *two* places at once, not one. Alongside the top-level
+`prompt_cache_hit_tokens` documented above, the same number is also mirrored into
+OpenAI's own nested convention, `prompt_tokens_details.cached_tokens`. Both were
+present on the live response; this project reads the top-level field, confirmed
+correct against a real cache hit (`cachedTokens: 256` on a repeated call), and simply
+doesn't use the redundant nested copy. Separately: `completion_tokens_details` is
+**absent from the response entirely** when thinking mode produced no reasoning — not
+present with `reasoning_tokens: 0`. Any code reading that path needs to handle the key
+being missing, not just falsy.
+
 ## 5. Rate limits beyond concurrency
 
 The docs specify **account-level concurrency only** — 2,500 for `deepseek-flash`, 500
