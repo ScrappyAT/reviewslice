@@ -22,10 +22,9 @@ Assessment 1, not rebuilt, per the brief's own explicit allowance.
 
 ## Section 2: How To Run It
 
-**Install:** Node.js [VERIFY: minimum supported version for Next.js 16.3.4 — this
-project was built and tested against Node 24.16.0, but I have not confirmed the
-framework's actual minimum], Docker Desktop (or another way to run `docker compose`),
-and `npm`.
+**Install:** Node.js — `node_modules/next/package.json` declares
+`"engines": { "node": ">=20.9.0" }`, Next 16.3.4's own stated minimum; built and tested
+on Node 24.16.0. Docker Desktop (or another way to run `docker compose`), and `npm`.
 
 1. Clone the repository and install dependencies:
    ```
