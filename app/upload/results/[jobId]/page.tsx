@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { describeFailureForUser } from "@/lib/failure-messages";
+import DraftReplyButton from "@/components/DraftReplyButton";
 
 // Positive/negative/mixed reuse the same semantic roles the job-status
 // badges use (components/JobListView.tsx) - tertiary for a good outcome,
@@ -25,7 +26,12 @@ export default async function ResultPage({ params }: { params: Promise<{ jobId: 
   // report on why that's deliberate, not an oversight.
   const job = await prisma.job.findFirst({
     where: { id: jobId, userId: user.id },
-    include: { results: { orderBy: { indexInFile: "asc" } } },
+    include: {
+      results: {
+        orderBy: { indexInFile: "asc" },
+        include: { replyDrafts: { orderBy: { createdAt: "asc" } } },
+      },
+    },
   });
 
   if (!job) {
@@ -88,6 +94,15 @@ export default async function ResultPage({ params }: { params: Promise<{ jobId: 
                 </span>
                 <span className="text-body-medium text-on-surface">&ldquo;{result.quotedEvidence}&rdquo;</span>
               </blockquote>
+
+              <DraftReplyButton
+                reviewResultId={result.id}
+                initialDrafts={result.replyDrafts.map((draft) => ({
+                  id: draft.id,
+                  replyText: draft.replyText,
+                  createdAt: draft.createdAt.toISOString(),
+                }))}
+              />
             </li>
           ))}
         </ul>

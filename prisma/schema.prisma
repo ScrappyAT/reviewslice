@@ -147,6 +147,45 @@ model ReviewResult {
   // same file. Also serves "fetch all results for a job" as this index's
   // leftmost-column prefix - no separate @@index([jobId]) needed.
   @@unique([jobId, indexInFile])
+
+  replyDrafts ReplyDraft[]
+}
+
+// The follow-up action's output: a drafted reply to one reviewer. FK'd to
+// ReviewResult, not Job - the action is triggered per review, on the
+// already-validated fields (see lib/ai/provider.ts's ReviewContext), not
+// on the file. No status column and no retry: this is a synchronous,
+// user-waited-on call (step 11), not a job - a row here exists only when
+// the call actually succeeded. A failed attempt (timeout, provider error,
+// empty response) is reported straight back to the request that asked for
+// it and leaves nothing behind to persist; there is no "processing" or
+// "failed" state for a reply draft to be caught in. That's also why the
+// token columns are NOT NULL, unlike Job's: a row that exists always has
+// real usage to report, because a row is never created without it.
+// No CHECK constraint here, unlike Job.status/ReviewResult.sentiment: there
+// is no enum-like or range-bound column on this table to constrain - the
+// only invalid state (a row with no ReviewResult behind it) is already
+// impossible via the required FK.
+model ReplyDraft {
+  id               String @id @default(cuid())
+  reviewResultId   String
+  replyText        String
+  rawResponse      String
+  promptTokens     Int
+  completionTokens Int
+  cachedTokens     Int
+  model            String
+
+  createdAt DateTime @default(now())
+
+  reviewResult ReviewResult @relation(fields: [reviewResultId], references: [id], onDelete: Cascade)
+
+  // Serves "fetch every draft for this review" (the result view). Not
+  // unique - a review may have more than one draft over time (clicking
+  // the control again after already having one is a fresh, independent
+  // draft, not an edit of the last one - no editing features exist in
+  // this project).
+  @@index([reviewResultId])
 }
 
 // The unvalidated artifact a model call actually returned, kept separate
