@@ -16,6 +16,11 @@ interface UploadFormProps {
   // module at all, even for the unrelated, non-secret values in it.
   maxSizeBytes: number;
   acceptedTypes: readonly string[];
+  // Called once, after a request that actually reached the server and got
+  // a 200 back (new Job rows may exist now) - not on a client rejection,
+  // a 401/429, or a network failure, none of which created anything new
+  // for the jobs list (components/UploadWorkspace.tsx) to show.
+  onUploaded?: () => void;
 }
 
 // Convenience only, not a control - the server (app/api/upload/route.ts)
@@ -29,7 +34,7 @@ function clientRejectionReason(file: File, maxSizeBytes: number): string | null 
   return null;
 }
 
-export default function UploadForm({ maxSizeBytes, acceptedTypes }: UploadFormProps) {
+export default function UploadForm({ maxSizeBytes, acceptedTypes, onUploaded }: UploadFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [outcomes, setOutcomes] = useState<FileOutcome[] | null>(null);
@@ -87,6 +92,7 @@ export default function UploadForm({ maxSizeBytes, acceptedTypes }: UploadFormPr
 
       setOutcomes(body.files);
       form.reset();
+      onUploaded?.();
     } catch {
       setFormError("Something went wrong. Please try again.");
     } finally {

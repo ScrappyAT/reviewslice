@@ -205,3 +205,24 @@ export const UPLOAD_STORAGE_DIR = path.resolve(process.cwd(), "..", "reviewslice
 // work" - no real feel for this yet, revisit once the worker (step 8)
 // actually runs against real uploads.
 export const WORKER_POLL_INTERVAL_MS = 2_000;
+
+// ---------------------------------------------------------------------------
+// Jobs list view
+// ---------------------------------------------------------------------------
+
+// How often the signed-in jobs list polls for updates while anything is
+// pending or processing. Slower than WORKER_POLL_INTERVAL_MS on purpose:
+// jobs can't change state faster than the worker itself acts, so polling
+// faster than the worker's own cadence would only add load, not reveal
+// anything sooner.
+export const JOBS_POLL_INTERVAL_MS = 3_000;
+
+// A "processing" job older than this is treated as implausibly stuck, not
+// merely slow - there is no reclaim feature (worker/index.ts), so nothing
+// else will ever move it out of "processing" on its own if the worker
+// that claimed it died. Derived, not guessed: the worst case for a job
+// that is genuinely still working is one timeout per attempt, across
+// every attempt the retry policy allows - doubled again as a buffer for
+// the worker's own poll interval and ordinary write latency, so a merely
+// slow job is never flagged by mistake.
+export const STUCK_PROCESSING_THRESHOLD_MS = TIMEOUT_MS.extractor * (RETRY_COUNT + 1) * 2;
