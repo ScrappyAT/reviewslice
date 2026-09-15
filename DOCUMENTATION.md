@@ -2,23 +2,9 @@
 
 ## Section 1: What This Is
 
-Reviewslice is a single AI-integration flow: a signed-in user uploads one or more
-plain-text files of customer product reviews, each file becomes a background job, a
-worker process sends the file to DeepSeek and gets back structured data — sentiment,
-a 1–5 rating, themes, complaints, and a literal quoted passage per review — validated
-in the app's own code before anything is trusted, and the user watches the job move
-through pending, processing, done, or failed on a live-updating list. From a finished
-job's result, the user can trigger one follow-up action on a single review: draft a
-reply to that reviewer, a second, distinct role for the same model, answered
-synchronously while they wait.
+Reviewslice is a small AI integration slice built around one flow. A signed-in user uploads one or more plain-text files of customer reviews; each file becomes a background job, and a worker sends the content to DeepSeek for analysis. The model returns structured data for each review — sentiment, a 1–5 rating, themes, complaints and a direct quote — and I don't trust any of it until my own application has validated it, including checking that the quote actually appears in the uploaded file. The user watches each job move through pending, processing, done or failed on a live-updating list. From a completed job they can pick one review and ask the model to draft a reply to that customer, which is a separate AI task running synchronously while they wait.
 
-Deliberately excluded: no landing page (nothing to land on if you're not signed in),
-no account system beyond the imported Assessment 1 auth, no editing, sharing, or
-exporting of anything, and no manual retry or reprocessing controls. Uploading a file
-again is the only "retry" that exists, by design — the brief asks for one flow, done
-properly, and every one of these would have been a second flow bolted onto the first.
-The auth pages, verification codes, and password reset are reused wholesale from
-Assessment 1, not rebuilt, per the brief's own explicit allowance.
+The scope is deliberately small. There is no landing page, no separate account system, no editing, sharing or exporting, and no manual retry button — if a user wants another analysis they upload the file again, and that is the only retry flow by design. Authentication is not rebuilt here either: I reused the auth system from Assessment 1, including the auth pages, verification codes and password reset, as the brief allows. The goal was never a complete review-management product. It was to build one AI workflow properly, including the parts that are easy to skip — background processing, validating what the model returns, honest job state, and what happens when it fails.
 
 ## Section 2: How To Run It
 
@@ -747,19 +733,7 @@ confirming it was never a code bug.
 
 ## Section 8: If I Built This Again
 
-I would give `Job` a structured `failureReason` column from the very first migration,
-not free-text-only `errorMessage`. The decision to keep `errorMessage` as a single
-free-text string felt reasonable in isolation at step 3 — it serves both the model's
-retry feedback and the human-readable record with one value — but it meant that by
-step 9, showing a user something safe and specific required matching that free text by
-string prefix in `lib/failure-messages.ts`, a mapping that silently degrades the
-moment the underlying wording changes anywhere upstream. A `failureReason` enum
-(`file_read` / `timeout` / `provider_error` / `empty_content` / `schema_invalid` /
-`hallucinated_quote`, say) decided at the same migration that introduced `status`
-would have made the user-facing mapping a total, exhaustive `switch` instead of an
-open-ended set of `startsWith` checks with a generic catch-all — the same category of
-improvement `status` itself already got over a plain string with no constraint at all,
-just one column later than it should have arrived.
+The main thing I would change is how I store job failures. Right now, `Job` has an `errorMessage` field that stores the failure as free text. That seemed reasonable when I first built it — one field could hold the error I needed for debugging as well as the message I wanted to show the user. The problem showed up later, when I needed to turn those errors into safe, user-friendly messages. I ended up checking the beginning of the error string in `lib/failure-messages.ts` and mapping different prefixes to different messages. That works, but it's fragile: if the wording of one of those errors changes somewhere upstream, the mapping can stop matching and quietly fall back to the generic message without making it obvious. If I were building this again, I'd add a separate `failureReason` field from the start — `file_read`, `timeout`, `provider_error`, `empty_content`, `schema_invalid`, `hallucinated_quote` — so `errorMessage` could stay as the detailed technical information while `failureReason` told the application exactly what kind of failure happened. The user-facing code could then switch over known reasons instead of trying to work out what happened by reading the wording of an error message. It's a small change, but it would make the failure handling far more predictable. Looking back, I should have made that decision at the same time I introduced the `status` field. Status is structured because the application makes decisions based on it. The failure reason should have been treated the same way.
 
 ---
 
