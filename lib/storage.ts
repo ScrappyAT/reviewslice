@@ -6,7 +6,7 @@
 // storage key ever goes in the database.
 
 import { randomBytes } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { UPLOAD_STORAGE_DIR } from "./ai/config";
 
@@ -42,6 +42,14 @@ export async function writeUploadedFile(storageKey: string, content: Buffer): Pr
   const fullPath = resolveStoragePath(storageKey);
   await mkdir(path.dirname(fullPath), { recursive: true });
   await writeFile(fullPath, content);
+}
+
+// Reads an uploaded file back as text - the worker's use (step 8): one
+// read per job, up front, reused for every attempt of that job so
+// quotedEvidence is checked against the exact same bytes on both the
+// first attempt and the retry.
+export async function readUploadedFile(storageKey: string): Promise<string> {
+  return readFile(resolveStoragePath(storageKey), "utf8");
 }
 
 // Best-effort cleanup for a file that was written but then couldn't be

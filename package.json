@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test"
+    "test": "node --import tsx --test",
+    "worker": "node --env-file=.env --import tsx worker/index.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
