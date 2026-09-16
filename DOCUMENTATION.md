@@ -543,7 +543,7 @@ contain anything a real customer wrote, and minimizing where that content lives 
 filesystem directory, not every database backup and replica) is a real property worth
 having independent of the brief's instruction.
 
-### Your cost model
+### Cost model
 
 **What it is.** A concrete accounting of what one unit of work costs in real provider
 billing, and what mechanisms bound the total the system could ever cost.
@@ -559,9 +559,11 @@ tokens: cache-miss input **$0.30 peak / $0.15 off-peak**; output **$1.20 peak / 
 off-peak**; cache-hit input **$0.006 peak / $0.003 off-peak**. Peak is 01:00–04:00 and
 06:00–10:00 UTC, Monday–Friday; off-peak is everything else, including all weekend
 hours, at exactly half of peak. Real, observed extraction cost: a genuine four-review
-file cost **505 prompt tokens and 263 completion tokens** in one recorded call — within
-the roughly 500 prompt / 260–370 completion range seen across several similar test
-files, the range reflecting ordinary variation in review length and count, not a
+file cost **505 prompt tokens and 263 completion tokens** in one recorded call, entirely
+at the cache-miss rate (no cache hit on that call) — (505 × $0.30 + 263 × $1.20) / 1M =
+**≈ $0.000467 peak**, and at half of every rate in that sum, **≈ $0.000234 off-peak**.
+That's within the roughly 500 prompt / 260–370 completion range seen across several
+similar test files, the range reflecting ordinary variation in review length and count, not a
 different code path. A drafted reply cost **243 prompt tokens and 53 completion
 tokens** — at off-peak pricing, **≈ $0.000068**. A second, near-identical call hit the
 cache at **256 cached tokens**, priced at the roughly 50x-cheaper cache-hit rate for
