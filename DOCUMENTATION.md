@@ -677,6 +677,63 @@ auth models existed in `prisma/schema.prisma` in this repository.
 as its final step; the error disappeared without touching the route file at all,
 confirming it was never a code bug.
 
+**5. A hydration mismatch on the uploads list, from a timestamp formatter with no
+fixed locale.**
+
+*Symptom:* React reported a hydration mismatch on the uploads list. The server-rendered
+HTML showed `Uploaded 15/09/2026, 15:45:38`; the browser's first client render showed
+`Uploaded 9/15/2026, 3:45:38 PM` for the exact same job.
+
+*Investigation:* `formatUploadedAt` (`components/JobListView.tsx`) was
+`new Date(iso).toLocaleString()` — no locale or options argument. `JobListView` is
+rendered inside `UploadWorkspace`, a client component (`"use client"`,
+`components/UploadWorkspace.tsx`), which Next.js still server-renders for the initial
+HTML before hydrating it in the browser — so the same call runs once on the server and
+once on the client. `toLocaleString()` with no arguments doesn't have a fixed output:
+it asks the JS runtime for its *default* locale, which each environment derives from
+its own settings — Node on the server read the server machine's locale (`en-GB` day/
+month/year, 24-hour), the browser read the visitor's OS/browser locale (`en-US`
+month/day/year, 12-hour). Same `Date`, two different strings, and React's hydration
+check compares text nodes literally.
+
+*Cause:* `Date.prototype.toLocaleString()` called with no locale/options is
+environment-dependent by design — it was never going to produce the same string in
+two different JS runtimes, SSR or not.
+
+*Fix:* passed an explicit locale and `timeZone` to the formatter instead of relying on
+either environment's default:
+
+```ts
+function formatUploadedAt(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+```
+
+Three alternatives considered and rejected. Rendering the raw ISO string: sidesteps
+the mismatch (an ISO string is locale-invariant) but fails the actual requirement — a
+person reading the uploads list shouldn't have to parse `2026-09-15T15:45:38.000Z` by
+eye. Formatting only after mount (`useEffect` + a `mounted` state flag, blank or ISO
+text until then): also correct, and it's the standard fix when the display *should*
+reflect the viewer's own locale/timezone — but it means the timestamp visibly pops in
+after first paint, and it only pays for that flash if per-viewer local time actually
+matters here, which it doesn't for this field. Pinning the locale but not the time
+zone: would have fixed this exact symptom (both machines in this case share a time
+zone) without fixing the actual bug — `toLocaleString()` with a locale but no
+`timeZone` still renders in whatever zone the runtime is in, so a server in one zone
+and a browser in another would still disagree. Pinning both is what actually
+guarantees the server and every visitor's browser render byte-identical text for the
+same `Date`, at the cost of showing everyone the same fixed-zone (UTC) clock instead of
+each viewer's own local time — an acceptable trade for an uploads-list timestamp,
+where "when, unambiguously" matters more than "in your zone."
+
 ## Section 7: What This Slice Does Not Handle
 
 **Outside the brief, by design:**

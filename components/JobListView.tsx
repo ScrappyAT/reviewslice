@@ -11,8 +11,21 @@ const STATUS_STYLES: Record<string, string> = {
   failed: "bg-error-container text-on-error-container",
 };
 
+// Locale and timeZone are pinned explicitly (not left to the runtime
+// default) so server and client render the identical string - a bare
+// toLocaleString() reads the *local* machine's locale, which differs
+// between the server and a visitor's browser and caused a hydration
+// mismatch (see DOCUMENTATION.md Section 6).
 function formatUploadedAt(iso: string): string {
-  return new Date(iso).toLocaleString();
+  return new Date(iso).toLocaleString("en-GB", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 export default function JobListView({ jobs }: { jobs: JobSummary[] }) {
