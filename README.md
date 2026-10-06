@@ -6,6 +6,10 @@ The application accepts customer review files, processes them asynchronously thr
 
 The focus of this project is not simply calling an AI API. It explores how to make AI-generated output reliable enough for an application to use.
 
+## Preview
+
+![AI customer review analysis results](./evidence/result-view.png)
+
 ## What It Does
 
 - Accepts customer review file uploads
